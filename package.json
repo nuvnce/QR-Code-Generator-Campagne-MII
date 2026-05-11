@@ -1,0 +1,32 @@
+{
+  "name": "qr-code-generator-campagne-mii",
+  "version": "1.0.0",
+  "description": "Générateur de QR codes pour la campagne de distribution MII — PNLP Togo",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "vercel-dev": "vercel dev"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.0",
+    "axios": "^1.6.7",
+    "qrcode": "^1.5.3",
+    "jspdf": "^2.5.1",
+    "exceljs": "^4.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "@neondatabase/serverless": "^0.9.0",
+    "lucide-react": "^0.383.0",
+    "clsx": "^2.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.4",
+    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35"
+  }
+}
