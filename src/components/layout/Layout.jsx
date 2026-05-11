@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../App';
 import {
   LayoutDashboard, QrCode, Shield, BookOpen,
-  Settings, LogOut, Menu, X, Mosquito
+  Settings, LogOut, Menu, X
 } from 'lucide-react';
 import { useState } from 'react';
 
