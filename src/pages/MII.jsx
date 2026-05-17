@@ -1,20 +1,44 @@
 // src/pages/MII.jsx
+// Format code MII : (21) 25181XXYYNNNNNNNNN
+//   XX = 2 lettres région | YY = 2 lettres district | NNNNNNNN = 8 chiffres séquentiel
 import { useState } from 'react';
 import api from '../lib/api';
 import districts from '../lib/districts.json';
 import { generateMIIPDF, exportExcel } from '../lib/pdfGenerator';
 import { Shield, Download, FileSpreadsheet, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 
-const ANNEE_DEFAUT = new Date().getFullYear();
+const ANNEE_DEFAUT      = new Date().getFullYear();
+const GS1_AI            = '(21)';
+const PREFIXE_FABRICANT = '25181';
+
+// 2 lettres district : initiales si 2 mots, sinon 2 premiers chars
+function getLettresDistrict(nomDistrict) {
+  const mots = nomDistrict.trim().split(/\s+/);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return nomDistrict.slice(0, 2).toUpperCase();
+}
 
 export default function MII() {
   const regions = Object.keys(districts);
 
-  const [form, setForm] = useState({ region: '', annee: ANNEE_DEFAUT, nb_codes: 500 });
+  const [form, setForm] = useState({
+    region: '', district: '', annee: ANNEE_DEFAUT, nb_codes: 500
+  });
   const [result,   setResult]   = useState(null);
   const [progress, setProgress] = useState(0);
   const [status,   setStatus]   = useState('idle');
   const [errMsg,   setErrMsg]   = useState('');
+
+  const districtsList = form.region
+    ? Object.keys(districts[form.region].districts)
+    : [];
+
+  const handleRegion = e => setForm(f => ({ ...f, region: e.target.value, district: '' }));
+
+  const lettresRegion   = form.region   ? districts[form.region].lettres : '??';
+  const lettresDistrict = form.district ? getLettresDistrict(form.district) : '??';
+  const segmentGeo      = `${lettresRegion}${lettresDistrict}`;
+  const exempleCode     = `${GS1_AI} ${PREFIXE_FABRICANT}${segmentGeo}00000001`;
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -24,12 +48,13 @@ export default function MII() {
     setResult(null);
 
     try {
-      const lettres = districts[form.region].lettres;
       const { data } = await api.post('/generate/mii', {
-        region:         form.region,
-        lettres_region: lettres,
-        annee:          form.annee,
-        nb_codes:       +form.nb_codes,
+        region:           form.region,
+        district:         form.district,
+        lettres_region:   lettresRegion,
+        lettres_district: lettresDistrict,
+        annee:            form.annee,
+        nb_codes:         +form.nb_codes,
       });
 
       setResult(data);
@@ -56,11 +81,12 @@ export default function MII() {
     }, 70);
 
     await generateMIIPDF({
-      codes:   result.codes,
-      region:  form.region,
-      lettres: districts[form.region].lettres,
-      vague:   result.vague,
-      annee:   form.annee,
+      codes:    result.codes,
+      region:   form.region,
+      district: form.district,
+      segment:  result.segment,
+      vague:    result.vague,
+      annee:    form.annee,
     });
 
     clearInterval(interval);
@@ -73,13 +99,11 @@ export default function MII() {
     await exportExcel(result.codes, {
       type:     'mii',
       region:   form.region,
-      district: '',
+      district: form.district,
       annee:    form.annee,
       vague:    result.vague,
     });
   };
-
-  const lettres = form.region ? districts[form.region].lettres : '??';
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -88,7 +112,7 @@ export default function MII() {
           <Shield size={24} className="text-[#3b82f6]" /> Codes MII
         </h1>
         <p className="text-[#8ba3be] text-sm mt-1">
-          Génère les QR codes des moustiquaires imprégnées d'insecticide.
+          Génère les QR codes des moustiquaires imprégnées d'insecticide (format GS1).
         </p>
       </div>
 
@@ -101,7 +125,7 @@ export default function MII() {
             <div className="relative">
               <select
                 value={form.region}
-                onChange={e => setForm(f => ({ ...f, region: e.target.value }))}
+                onChange={handleRegion}
                 required
                 className="w-full bg-[#07131f] border border-[#1a3a5c] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#3b82f6] appearance-none transition-colors"
               >
@@ -116,13 +140,39 @@ export default function MII() {
             </div>
           </div>
 
+          {/* District */}
+          <div>
+            <label className="block text-[#8ba3be] text-xs font-medium mb-1.5">District</label>
+            <div className="relative">
+              <select
+                value={form.district}
+                onChange={e => setForm(f => ({ ...f, district: e.target.value }))}
+                required
+                disabled={!form.region}
+                className="w-full bg-[#07131f] border border-[#1a3a5c] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#3b82f6] appearance-none transition-colors disabled:opacity-40"
+              >
+                <option value="">— Sélectionner un district —</option>
+                {districtsList.map(d => (
+                  <option key={d} value={d}>
+                    {d}  [{getLettresDistrict(d)}]
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a5a7c] pointer-events-none" />
+            </div>
+          </div>
+
           {/* Aperçu code */}
-          {form.region && (
-            <div className="bg-[#07131f] border border-[#1a3a5c] rounded-lg px-4 py-3">
-              <p className="text-[#8ba3be] text-xs mb-1">Exemple de code généré :</p>
-              <p className="text-[#3b82f6] font-mono text-sm">
-                MII-TG-{form.annee}-V?{lettres}-0000001
-              </p>
+          {form.district && (
+            <div className="bg-[#07131f] border border-[#1a3a5c] rounded-lg px-4 py-3 space-y-2">
+              <p className="text-[#8ba3be] text-xs font-medium">Exemple de code généré :</p>
+              <p className="text-[#3b82f6] font-mono text-sm">{exempleCode}</p>
+              <div className="flex flex-wrap gap-3 text-xs text-[#8ba3be] pt-0.5">
+                <span><span className="text-white font-medium">(21)</span> = AI GS1</span>
+                <span><span className="text-white font-medium">25181</span> = Fabricant</span>
+                <span><span className="text-[#00c28e] font-medium">{lettresRegion}</span> = {form.region}</span>
+                <span><span className="text-[#f59e0b] font-medium">{lettresDistrict}</span> = {form.district}</span>
+              </div>
             </div>
           )}
 
@@ -183,11 +233,13 @@ export default function MII() {
           <div className="mt-5 space-y-3">
             <div className="bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-xl p-4 flex items-start gap-3">
               <CheckCircle2 size={20} className="text-[#3b82f6] mt-0.5 shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <p className="text-white font-semibold text-sm">
-                  {result.nb_codes?.toLocaleString('fr-FR')} codes MII générés — Vague {result.vague}
+                  {result.nb_codes?.toLocaleString('fr-FR')} codes — {form.district} — Vague {result.vague}
                 </p>
-                <p className="text-[#8ba3be] text-xs mt-1 font-mono">{result.exemple} …</p>
+                <p className="text-[#8ba3be] text-xs mt-1.5 font-mono truncate">{result.exemple}</p>
+                <p className="text-[#8ba3be] text-xs font-mono">…</p>
+                <p className="text-[#8ba3be] text-xs font-mono truncate">{result.dernier}</p>
               </div>
             </div>
 

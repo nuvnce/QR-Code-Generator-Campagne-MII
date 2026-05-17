@@ -26,7 +26,7 @@ export default function Registre() {
     })),
     ...data.mii.map(m => ({
       ...m, _type: 'mii',
-      zone: m.region,
+      zone: m.district ? `${m.district} [${m.segment_geo}]` : m.region,
     })),
   ]
     .sort((a, b) => new Date(b.date_generation) - new Date(a.date_generation))

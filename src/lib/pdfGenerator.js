@@ -75,7 +75,7 @@ export async function generateCouponsPDF({ codes, district, vague, annee, logoBa
 }
 
 // ─── Génération PDF MII ──────────────────────────────────────────────────────
-export async function generateMIIPDF({ codes, region, lettres, vague, annee, logoBase64 }) {
+export async function generateMIIPDF({ codes, region, district, segment, vague, annee, logoBase64 }) {
   const doc  = new jsPDF({ unit: 'mm', format: 'a4' });
   const W    = 210, H = 297;
   const COLS = 3, ROWS = 4;
@@ -124,7 +124,7 @@ export async function generateMIIPDF({ codes, region, lettres, vague, annee, log
     doc.text(codes[i], x + cW / 2, qrY + QR + 3, { align: 'center' });
   }
 
-  const fileName = `mii_${lettres}_V${vague}_${annee}.pdf`;
+  const fileName = `mii_${segment}_V${vague}_${annee}.pdf`;
   doc.save(fileName);
   return fileName;
 }
