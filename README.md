@@ -33,7 +33,7 @@ git push -u origin main
    - `JWT_SECRET`   = une chaîne aléatoire longue (ex: `openssl rand -hex 32`)
 5. Cliquer **Deploy**
 
-✅ L'app est live sur `https://qr-mii-pnlp.vercel.app` (URL personnalisable)
+✅ L'app est live sur `[qr-code-generator-campagne-mii-app](https://qr-code-generator-campagne-mii.vercel.app/)` (URL personnalisable)
 
 ### 4. Première connexion
 
